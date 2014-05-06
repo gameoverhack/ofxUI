@@ -28,17 +28,36 @@
 
 ofxUITextInput::ofxUITextInput(string _name, string _textstring, float w, float h, float x, float y, int _size) : ofxUIWidgetWithLabel()
 {
+    useReference = false;
+    init(_name, &_textstring, w, h, x, y, _size);
+}
+
+ofxUITextInput::ofxUITextInput(string _name, string *_textstring, float w, float h, float x, float y, int _size) : ofxUIWidgetWithLabel()
+{
+    useReference = true;
     init(_name, _textstring, w, h, x, y, _size);
 }
 
-void ofxUITextInput::init(string _name, string _textstring, float w, float h, float x, float y, int _size)
+void ofxUITextInput::init(string _name, string *_textstring, float w, float h, float x, float y, int _size)
 {
     initRect(x,y,w,h);
     name = string(_name);
     kind = OFX_UI_WIDGET_TEXTINPUT;
-    textstring = string(_textstring);
-    defaultstring = string(_textstring);
-    displaystring = string(_textstring);
+
+    textstring = *_textstring;
+    
+    if(useReference)
+    {
+        textstringRef = _textstring;
+    }
+    else
+    {
+        textstringRef = new string();
+        *textstringRef = textstring;
+    }
+    
+    defaultstring = string(textstring);
+    displaystring = string(textstring);
     
     clicked = false;                                            //the widget's value
     autoclear = true;
@@ -148,7 +167,19 @@ void ofxUITextInput::mousePressed(int x, int y, int button)
         theta = 0;
         hit = true;
 #endif
-        cursorPosition = label->getLabel().length();
+        
+        // place cursor where we click on the text input
+        string textatcursor = "";
+
+        while((x - rect->x) > label->getStringWidth(textatcursor)){
+            if(textatcursor.length() >= displaystring.size()){
+                textatcursor = displaystring + ".";
+                break;
+            }
+            textatcursor += displaystring.at(textatcursor.length());
+        }
+        
+        cursorPosition = textstring.length() - displaystring.length() + textatcursor.length() - 1;
         
         state = OFX_UI_STATE_DOWN;
         inputTriggerType = OFX_UI_TEXTINPUT_ON_FOCUS;
@@ -191,7 +222,7 @@ void ofxUITextInput::mouseReleased(int x, int y, int button)
 
 void ofxUITextInput::keyPressed(int key)
 {
-    if(clicked)
+    if(isClicked())
     {
         switch (key)
         {
@@ -223,13 +254,13 @@ void ofxUITextInput::keyPressed(int key)
                 {
                     clicked = false;
                 }
-
+                *textstringRef = textstring;
                 triggerEvent(this);
                 if(autoclear)
                 {
-                    cursorPosition = 0;
-                    textstring.clear();
-                    recalculateDisplayString();
+                    setTextString("");
+                }else{
+                    setTextString(textstring);
                 }
                 break;
                 
@@ -246,6 +277,7 @@ void ofxUITextInput::keyPressed(int key)
             case OF_KEY_UP:
                 if(cursorPosition > 0)
                 {
+                    cout << cursorPosition << " " << textstring.length() << endl;
                     cursorPosition--;
                     recalculateDisplayString();
                 }
@@ -363,31 +395,15 @@ int ofxUITextInput::getInputTriggerType()
 
 void ofxUITextInput::setTextString(string s)
 {
-    textstring = "";
-    string temp = "";
-    
-    int length = s.length();
-    
-    if(length > 0)
-    {
-        for(int i = 0; i < length; i++)
-        {
-            temp+=s.at(i);
-            float newWidth = label->getStringWidth(temp);
-            
-            if(newWidth < rect->getWidth()-padding*2.0)
-            {
-                textstring+=s.at(i);
-                label->setLabel(textstring);
-            }
-        }
-    }
-    else
-    {
-        textstring = s;
-        label->setLabel(textstring);
-    }
+    textstring = s;
+    defaultstring = textstring;
     displaystring = textstring;
+    
+    cursorPosition = textstring.length();
+    
+    firstVisibleCharacterIndex = 0;
+    
+    recalculateDisplayString();
 }
 
 void ofxUITextInput::setParent(ofxUIWidget *_parent)
@@ -408,17 +424,10 @@ void ofxUITextInput::setParent(ofxUIWidget *_parent)
     defaultX = labelrect->getX(false);
     
     cursorWidth = label->getStringWidth(".");
-    while(label->getStringWidth(textstring) > rect->getWidth()-padding*2.0)
-    {
-        string::iterator it;
-        it=textstring.begin();
-        textstring.erase (it);
-    }
-    
-    defaultstring = textstring;
-    displaystring = textstring;
-    setTextString(textstring);
+
     calculatePaddingRect();
+    setTextString(textstring);
+    
 }
 
 void ofxUITextInput::setAutoClear(bool _autoclear)

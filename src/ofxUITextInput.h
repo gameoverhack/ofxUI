@@ -31,7 +31,8 @@ class ofxUITextInput : public ofxUIWidgetWithLabel
 {
 public:
     ofxUITextInput(string _name, string _textstring, float w, float h = 0, float x = 0, float y = 0, int _size = OFX_UI_FONT_SMALL);
-    void init(string _name, string _textstring, float w, float h = 0, float x = 0, float y = 0, int _size = OFX_UI_FONT_SMALL);
+    ofxUITextInput(string _name, string *_textstring, float w, float h = 0, float x = 0, float y = 0, int _size = OFX_UI_FONT_SMALL);
+    void init(string _name, string *_textstring, float w, float h = 0, float x = 0, float y = 0, int _size = OFX_UI_FONT_SMALL);
     virtual void setDrawPadding(bool _draw_padded_rect);
     virtual void setDrawPaddingOutline(bool _draw_padded_rect_outline);
     virtual void drawFill();
@@ -61,9 +62,11 @@ public:
 #endif    
 
 protected:
-	string textstring; 
-	string defaultstring; 
-    string displaystring; 
+	string * textstringRef;
+    string textstring;
+	string defaultstring;
+    string displaystring;
+    bool useReference;
 	bool clicked;
     bool autoUnfocus; 
 	float theta; 
