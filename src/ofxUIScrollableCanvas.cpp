@@ -524,7 +524,7 @@ void ofxUIScrollableCanvas::mousePressed(int x, int y, int button)
         {
             if((*it)->isVisible())
             {
-                if((*it)->isHit(x, y))
+                if((*it)->isHit(x, y) || (*it)->getKind() == OFX_UI_WIDGET_TEXTINPUT) // allows text input widget to correctly de-focus/unclick
                 {
                     if((*it)->isDraggable())
                     {
